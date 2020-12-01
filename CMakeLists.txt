@@ -115,6 +115,8 @@ add_subdirectory(extern/CommonLibSSE CommonLibSSE)
 
 find_package(spdlog REQUIRED)
 
+find_path(XBYAK_INCLUDE_DIRS "xbyak/xbyak.h")
+
 # ---- Add source files ----
 
 set(headers
@@ -164,6 +166,7 @@ target_include_directories(${PROJECT_NAME}
 	PRIVATE 
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:src>
+        ${XBYAK_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
