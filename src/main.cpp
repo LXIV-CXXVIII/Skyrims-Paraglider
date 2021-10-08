@@ -1,5 +1,4 @@
 ﻿#include "C:/dev/ExamplePlugin-CommonLibSSE/build/simpleini-master/SimpleIni.h"
-#include "C:/dev/ExamplePlugin-CommonLibSSE/build/SOS.h"
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
@@ -47,101 +46,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
     return true;
 }
 
-class SkyrimOnlineService {
 
-public:
-    void func(ISteamMatchmaking* a_mm, ISteamNetworking* a_net) {
-    
-        //const void* ptr = nullptr;
-        //a_net->SendP2PPacket(CSteamID::BAnonAccount(), ptr, 20, );
-        //a_net->CreateListenSocket();
-        a_mm->CreateLobby(ELobbyType::k_ELobbyTypePrivate, 8);
-        
-    
-    }
-
-};
-
-class MagicEffectApplyEventHandler : public RE::BSTEventSink<RE::TESMagicEffectApplyEvent> {
-
-public:
-    static MagicEffectApplyEventHandler* GetSingleton() {
-        static MagicEffectApplyEventHandler singleton;
-        return &singleton;
-    }
-
-    auto ProcessEvent(const RE::TESMagicEffectApplyEvent* a_event, RE::BSTEventSource<RE::TESMagicEffectApplyEvent>* a_eventSource) -> RE::BSEventNotifyControl override {
-
-        static RE::EffectSetting* notRevalisGale = NULL;
-        static RE::TESDataHandler* dataHandle = NULL;
-        if (!dataHandle) {  // we only need this to run once
-            dataHandle = RE::TESDataHandler::GetSingleton();
-            if (dataHandle) {
-                notRevalisGale = dataHandle->LookupForm<RE::EffectSetting>(0x10C68, "Paragliding.esp");
-            }
-        };
-
-        if (!a_event) {
-            return RE::BSEventNotifyControl::kContinue;
-        }
-        //a_event->target->PlayAnimation();
-        if (a_event->magicEffect == notRevalisGale->formID) {
-            a_event->caster->NotifyAnimationGraph("pebos");
-        }
-
-        return RE::BSEventNotifyControl::kContinue;
-
-    }
-
-protected:
-    MagicEffectApplyEventHandler() = default;
-    MagicEffectApplyEventHandler(const MagicEffectApplyEventHandler&) = delete;
-    MagicEffectApplyEventHandler(MagicEffectApplyEventHandler&&) = delete;
-    virtual ~MagicEffectApplyEventHandler() = default;
-
-    auto operator=(const MagicEffectApplyEventHandler&)->MagicEffectApplyEventHandler & = delete;
-    auto operator=(MagicEffectApplyEventHandler&&)->MagicEffectApplyEventHandler & = delete;
-
-};
-/// <summary>
-///  determine if UGS
-/// </summary>
-class TESObjectLoadedEventHandler : public RE::BSTEventSink<RE::TESObjectLoadedEvent> {
-
-public:
-    static TESObjectLoadedEventHandler* GetSingleton() {
-        static TESObjectLoadedEventHandler singleton;
-        return &singleton;
-    }
-
-    auto ProcessEvent(const RE::TESObjectLoadedEvent* evn, RE::BSTEventSource<RE::TESObjectLoadedEvent>* a_eventSource) -> RE::BSEventNotifyControl override {
-        if (!evn) {
-            return RE::BSEventNotifyControl::kContinue;
-        }
-
-        auto weapon = RE::TESForm::LookupByID<RE::TESObjectWEAP>(evn->formID);
-        auto range = weapon->GetMaxRange();
-        float maxRange = 0.00f;
-        float minRange = 0.00f;
-        if (range >= maxRange) {
-
-        }
-
-
-        //actor->pad0EC = (actor->armorRating + actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor));
-
-        return RE::BSEventNotifyControl::kContinue;
-    }
-
-protected:
-    TESObjectLoadedEventHandler() = default;
-    TESObjectLoadedEventHandler(const TESObjectLoadedEventHandler&) = delete;
-    TESObjectLoadedEventHandler(TESObjectLoadedEventHandler&&) = delete;
-    virtual ~TESObjectLoadedEventHandler() = default;
-
-    auto operator=(const TESObjectLoadedEventHandler&)->TESObjectLoadedEventHandler & = delete;
-    auto operator=(TESObjectLoadedEventHandler&&)->TESObjectLoadedEventHandler & = delete;
-};
 
 namespace PoiseMod {
 
@@ -281,7 +186,6 @@ public:
                 if (!keywords) {
                     return NULL;
                 }
-                //keywords->
                 for (std::uint32_t idx = 0; idx < ae->effect->baseEffect->numKeywords; ++idx) {
                     if (keywords[idx] && keywords[idx]->formEditorID == a_editorID) {
                         return ae->effect;
@@ -330,34 +234,6 @@ public:
         this->CaestusMult = ini.GetDoubleValue("ANIMATED_ARMOURY", "fCaestusMult", -1.00f);
         this->ClawMult = ini.GetDoubleValue("ANIMATED_ARMOURY", "fClawMult", -1.00f);
         this->WhipMult = ini.GetDoubleValue("ANIMATED_ARMOURY", "fWhipMult", -1.00f);
-        //auto section1 = ini.GetSection("SETTINGS");
-        ///for (auto it = section1->begin(); it != section1->end(); ++it) {
-        //    auto first = it->first;
-        //    
-        //    first.pItem;
-        //}
-        //section1->
-        /**
-        std::map<const char*, const char*> iniMap;
-        for (auto m : iniMap) {
-            if (iniMap["SETTINGS"] == "fRapierMult") {
-            
-            }
-        }
-        auto section1 = ini.GetSection("SETTINGS");
-        for (auto& sec : section1) {
-        
-        }
-        struct pebis {
-            int x;
-            int y;
-            int z;
-        };
-        pebis p = {2,3,4};
-        for (auto it : p) {
-        
-        }
-        */
 
     }
 
@@ -401,8 +277,7 @@ private:
         bool weapFault = false;
         float a_result = 0.00f;
         if (!weap) {
-            return a_hitData.aggressor.get()->GetAttackingWeapon()->GetWeight();
-            //
+            return a_hitData.aggressor.get()->GetAttackingWeapon()->GetWeight();\
         }
         a_result = weap->weight;
 
@@ -473,11 +348,6 @@ private:
 
         }
 
-        //auto effect = Loki_PluginTools::HasEffectWithKeyword(a_actor, "PoiseDmgBuff");
-        //if (effect) {
-        //    auto buffPercent = effect->effectItem.magnitude;
-        //}
-
         auto activeEffects = a_actor->GetActiveEffectList();
         static const RE::BSFixedString buffKeyword = "PoiseDmgBuff";
         static const RE::BSFixedString nerfKeyword = "PoiseDmgNerf";
@@ -497,9 +367,6 @@ private:
                 if (!ae->effect->baseEffect) {
                     break;
                 }
-                //if (ae->effect->baseEffect->HasKeyword(poiseDmg)) {
-                //    poiseDmg->formEditorID;
-                //}
                 auto keyword = ae->effect->baseEffect->GetDefaultKeyword();
                 if (!keyword) {
                     break;
@@ -533,13 +400,6 @@ private:
     }
     static float CalculateMaxPoise(RE::Actor* a_actor) {
 
-        //static Loki_PoiseMod* ptr = new Loki_PoiseMod();
-
-        //float a_result = ((a_actor->armorRating / 10) + (a_actor->GetActorValue(RE::ActorValue::kStamina) / 2));
-
-        //const RE::BGSKeyword* poiseBuffKeyword = "";
-        //if (a_actor->Is)
-
         float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.30f));
 
         auto activeEffects = a_actor->GetActiveEffectList();
@@ -571,7 +431,6 @@ private:
 
         }
 
-
         return a_result;
 
     }
@@ -579,20 +438,11 @@ private:
     static bool IsActorKnockdown(RE::Character* a_this, std::int64_t a_unk) {
 
         if (a_this->IsPlayerRef()) {
-            //a_this->SetGraphVariableFloat("staggerMagnitude", 1.00f);
             a_this->NotifyAnimationGraph("poise_largest_start");
             return false;
         } else {
             return _IsActorKnockdown(a_this, a_unk);
         }
-
-    }
-
-    static RE::hkpCharacterProxy* GetProxy(void* a_1, void* a_2) {
-
-        using func_t = decltype(&Loki_PoiseMod::GetProxy);
-        REL::Relocation<func_t> func{ REL::ID(77242) };
-        return func(a_1, a_2);
 
     }
 
@@ -617,40 +467,6 @@ private:
         if (!a_actor->HasMagicEffect(poiseDelay)) {
             a_actor->pad0EC = Loki_PoiseMod::CalculateMaxPoise(a_actor);
         }
-
-
-        /**
-        auto charCont = a_actor->GetCharController();
-        auto surfaceAngle = charCont->surfaceInfo.surfaceNormal.quad.m128_f32[0];
-        auto surfaceVelocity = charCont->surfaceInfo.surfaceVelocity;
-        if (surfaceAngle >= 0.30f || surfaceAngle <= -0.30f) {
-            RE::DebugNotification("angle too high");
-            a_actor->AddSpell(climbSpell);
-            a_actor->NotifyAnimationGraph("SneakStart");
-            if (surfaceAngle > 0.00f) {
-                charCont->pitchAngle = surfaceAngle * -1.00f;
-                charCont->rollAngle = surfaceAngle;
-            } else if (surfaceAngle < 0.00f) {
-                charCont->pitchAngle = surfaceAngle;
-                charCont->rollAngle = surfaceAngle * -1.00f;
-            }
-            if (surfaceVelocity.quad.m128_f32[0] >= 2.00f) {
-                surfaceVelocity.quad.m128_f32[0] = 2.00f;
-            } else if (surfaceVelocity.quad.m128_f32[1] >= 2.00f) {
-                surfaceVelocity.quad.m128_f32[1] = 2.00f;
-            } else if (surfaceVelocity.quad.m128_f32[2] >= 2.00f) {
-                surfaceVelocity.quad.m128_f32[2] = 2.00f;
-            }
-        } else {
-            a_actor->RemoveSpell(climbSpell);
-        }
-        */
-        
-
-
-        //auto proxy = (RE::hkpCharacterProxy)a_actor->AsReference();
-        //RE::RTTI_hkpCharacterProxyCinfo;
-        //39375	69e580  Actor::Update Call
 
         return;
 
