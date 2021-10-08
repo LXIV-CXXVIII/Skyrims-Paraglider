@@ -277,7 +277,7 @@ private:
         bool weapFault = false;
         float a_result = 0.00f;
         if (!weap) {
-            return a_hitData.aggressor.get()->GetAttackingWeapon()->GetWeight();\
+            return a_hitData.aggressor.get()->GetAttackingWeapon()->GetWeight();
         }
         a_result = weap->weight;
 
