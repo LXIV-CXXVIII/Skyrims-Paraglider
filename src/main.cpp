@@ -1,4 +1,5 @@
 ﻿#include "C:/dev/ExamplePlugin-CommonLibSSE/build/simpleini-master/SimpleIni.h"
+#include "C:/dev/ExamplePlugin-CommonLibSSE/build/SkyrimOnlineService.h"
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
@@ -98,7 +99,14 @@ protected:
 
 };
 
-  
+class SkyrimOnlineService {
+
+public:
+    static void func(ISteamMatchmaking* a_mm, ISteamNetworking* a_net) {
+        a_mm->CreateLobby(ELobbyType::k_ELobbyTypePrivate, 8);
+    }
+
+};
 
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
@@ -106,6 +114,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     logger::info("Skyrim Online Service loaded");
     SKSE::Init(a_skse);
     SKSE::AllocTrampoline(64);
+
+    ISteamMatchmaking* mm = NULL;
+    ISteamNetworking* net = NULL;
+    SkyrimOnlineService::func(mm, net);
 
     return true;
 }
