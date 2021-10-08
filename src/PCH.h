@@ -1,8 +1,16 @@
 #pragma once
-
+#define NOMINMAX
+//_CRT_SECURE_NO_WARNINGS
+#include <Windows.h>
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 #include "xbyak/xbyak.h"
+//_CRT_SECURE_NO_WARNINGS;
+
+//#include "C:/dev/steamworks_sdk_152/sdk/public/steam/steam_api.h"
+//#pragma comment(lib, "steam_api64.lib");
+//#define NOMINMAX
+//#include <Windows.h>
 
 #ifdef NDEBUG
 #include <spdlog/sinks/basic_file_sink.h>
