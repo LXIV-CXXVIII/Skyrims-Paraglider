@@ -1,6 +1,7 @@
 #pragma once
 #define NOMINMAX
 //_CRT_SECURE_NO_WARNINGS
+#define TRUEHUD_API_COMMONLIB
 #include <Windows.h>
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
