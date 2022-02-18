@@ -1,7 +1,4 @@
 ﻿#include "C:/dev/ExamplePlugin-CommonLibSSE/build/simpleini-master/SimpleIni.h"
-#include "C:/dev/ExamplePlugin-CommonLibSSE/build/SkyrimOnlineService.h"
-#include "TrueHUDAPI.h"
-
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
 #ifndef NDEBUG
@@ -12,7 +9,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
         return false;
     }
 
-    *path /= "loki_SkyrimOnlineService.log"sv;
+    *path /= "Paraglider.log"sv;
     auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 #endif
 
@@ -28,10 +25,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
     spdlog::set_default_logger(std::move(log));
     spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
 
-    logger::info("loki_SkyrimOnlineService v1");
+    logger::info("Paraglider v1.0.0");
 
     a_info->infoVersion = SKSE::PluginInfo::kVersion;
-    a_info->name = "loki_SkyrimOnlineService";
+    a_info->name = "Paraglider";
     a_info->version = 1;
 
     if (a_skse->IsEditor()) {
@@ -48,241 +45,218 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
     return true;
 }
 
-/**/
-using ItemMap = RE::TESObjectREFR::InventoryItemMap;
-class SkyrimOnlineService_Host {
+static bool isActivate = FALSE;
+static bool isParagliding = FALSE;
+static float progression = 0.0f;
+static float start = 0.0f;
 
-    struct Player {
-    public:
-        std::string      PlayerName = {};
-        std::uint16_t    PlayerLevel = NULL;
-        //ItemMap          PlayerInventory = {};
-        RE::BGSLocation* PlayerLocation = {};
-        bool IsLobbyOpen = false;
-
-    };
-    struct ConnectedPlayer {
-    public:
-        std::string   PlayerInstance = {};
-        std::uint64_t SteamID = {};
-        std::string   Token = {};
-        Player        player;
-    };
-    struct Pool {
-    public:
-        std::string ID = {};
-        std::list<ConnectedPlayer> Players;
-    };
-    struct Scope {
-    public:
-        std::string     App;
-        std::list<Pool> Pools;
-    };
+class MagicEffectApplyEventHandler : public RE::BSTEventSink<RE::TESMagicEffectApplyEvent> {
 
 public:
-    virtual HSteamListenSocket CreateListenSocket(const SteamNetworkingIPAddr& localAddress, int nOptions, const SteamNetworkingConfigValue_t* pOptions) {
-    
+    static MagicEffectApplyEventHandler* GetSingleton() {
+        static MagicEffectApplyEventHandler singleton;
+        return &singleton;
     }
-    virtual SteamAPICall_t  CreateCoopLobby(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) { return _CreateCoopLobbyImpl(a_mm, a_lobbyType); };
-    virtual SteamAPICall_t  CreateGroupLobby(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) { return _CreateGroupLobbyImpl(a_mm, a_lobbyType); };
-    virtual SteamAPICall_t  LeaveLobby(ISteamMatchmaking* a_mm, CSteamID a_lobby) { return _LeaveLobbyImpl(a_mm, a_lobby); };
-    virtual Player          GetPlayer() { return ConstructPlayerInformation(); };
-    virtual RE::NiAVObject* GetPlayer3D() { return _GetPlayer3DImpl(); };
 
-    // members
-    bool isNetworkActive = false;
+    auto ProcessEvent(const RE::TESMagicEffectApplyEvent* a_event, RE::BSTEventSource<RE::TESMagicEffectApplyEvent>* a_eventSource) -> RE::BSEventNotifyControl override {
 
-private:
-    SteamAPICall_t _CreateCoopLobbyImpl(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) {
-        isNetworkActive = player.IsLobbyOpen ? true : false;
-        return a_mm->CreateLobby(a_lobbyType, 2);
-    };
-    SteamAPICall_t _CreateGroupLobbyImpl(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) {
-        isNetworkActive = player.IsLobbyOpen ? true : false;
-        return a_mm->CreateLobby(a_lobbyType, 8);
-    };
-    SteamAPICall_t _LeaveLobbyImpl(ISteamMatchmaking* a_mm, CSteamID a_lobby) {
-        a_mm->LeaveLobby(a_lobby);
-    }
-    ConnectedPlayer _ConstructConnectedPlayer() {
+        static RE::EffectSetting* notRevalisGale = NULL;
+        static RE::TESDataHandler* dataHandle = NULL;
+        if (!dataHandle) {  // we only need this to run once
+            dataHandle = RE::TESDataHandler::GetSingleton();
+            if (dataHandle) {
+                notRevalisGale = dataHandle->LookupForm<RE::EffectSetting>(0x10C68, "Paragliding.esp");
+            }
+        };
 
-    }
-    Pool _ConstructPool() {
-        pool.ID = "Skyrim DND";
-        for (auto idx = pool.Players.begin(); idx != pool.Players.end(); ++idx) {
-            pool.Players.push_back(_ConstructConnectedPlayer());
+        if (!a_event) {
+            return RE::BSEventNotifyControl::kContinue;
         }
-    }
-    Pool _GetPoolImpl() {
-        return pool;
-    }
-    Player ConstructPlayerInformation() {
-        return []() -> Player {
-            player.PlayerName = RE::PlayerCharacter::GetSingleton()->GetName();
-            player.PlayerLevel = RE::PlayerCharacter::GetSingleton()->GetLevel();
-            //player.PlayerInventory = RE::PlayerCharacter::GetSingleton()->GetInventory();
-            player.PlayerLocation = RE::PlayerCharacter::GetSingleton()->currentLocation;
-            player.IsLobbyOpen = false;
-            return player;
-        }();
-    }
-    RE::NiAVObject* _GetPlayer3DImpl() {
+        if (a_event->magicEffect == notRevalisGale->formID) {
+            start = 0.00f;
+            progression = 0.00f;
+        }
 
-        //for (auto idx : inv) {
+        return RE::BSEventNotifyControl::kContinue;
 
-        //}
     }
-
-    // members
-    static Player player;
-    static Pool pool;
 
 protected:
-    // members
+    MagicEffectApplyEventHandler() = default;
+    MagicEffectApplyEventHandler(const MagicEffectApplyEventHandler&) = delete;
+    MagicEffectApplyEventHandler(MagicEffectApplyEventHandler&&) = delete;
+    virtual ~MagicEffectApplyEventHandler() = default;
+
+    auto operator=(const MagicEffectApplyEventHandler&)->MagicEffectApplyEventHandler & = delete;
+    auto operator=(MagicEffectApplyEventHandler&&)->MagicEffectApplyEventHandler & = delete;
 
 };
 
-class SkyrimOnlineService_DM :
-    public SkyrimOnlineService_Host {
-
-    enum class CharacterSlot : std::uint64_t {
-        kCharacter0 = 0,
-        kCharacter1,
-        kCharacter2,
-        kCharacter3,
-        kCharacter4,
-        kCharacter5,
-        kCharacter6,
-        kCharacter7,
-        kCharacter8,
-    };
-
-    struct ConnectedCharacter {
-    public:
-        CharacterSlot charSlot;
-        RE::Actor* actor;
-        RE::TESFaction* faction;
-        float hp;
-    };
-
+class Loki_Paraglider
+{
 public:
-    // OVERRIDE
-    virtual SteamAPICall_t CreateGroupLobby(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) { return _CreateGroupLobbyImpl(a_mm, a_lobbyType); };
-    virtual SteamAPICall_t LeaveLobby(ISteamMatchmaking* a_mm, CSteamID a_lobby) { };
-    // ADD
-    //virtual ConnectedCharacter GetCharInfo(CharacterSlot a_slot) { return GetCharacterInformation(a_slot); };
+    float FallSpeed, GaleSpeed;
+    Loki_Paraglider() {
+        CSimpleIniA ini;
+        ini.SetUnicode();
+        auto filename = L"Data/SKSE/Plugins/Paraglider.ini";
+        SI_Error rc = ini.LoadFile(filename);
+
+        this->FallSpeed = (float)ini.GetDoubleValue("SETTINGS", "fFallSpeed", 0.00f);
+        this->GaleSpeed = (float)ini.GetDoubleValue("SETTINGS", "fGaleSpeed", 0.00f);
+
+    }
+
+    static void* CodeAllocation(Xbyak::CodeGenerator& a_code, SKSE::Trampoline* t_ptr)
+    {
+        auto result = t_ptr->allocate(a_code.getSize());
+        std::memcpy(result, a_code.getCode(), a_code.getSize());
+        return result;
+
+    }
+    static float lerp(float a, float b, float f) {
+        return a + f * (b - a);
+    }
+
+    static void InstallActivateTrue() {
+
+        REL::Relocation<std::uintptr_t> target{ REL::ID(41346), 0x3C };
+        REL::Relocation<std::uintptr_t> addr{ REL::ID(41346), 0x140 };
+        //Loki_Paraglider LPG;
+
+        struct Patch : Xbyak::CodeGenerator {
+
+            Patch(std::uintptr_t a_var, std::uintptr_t a_target) {
+
+                Xbyak::Label ourJmp;
+                Xbyak::Label ActivateIsTrue;
+
+                mov(byte[rcx + 0x18], 0x1);
+                push(rax);
+                mov(rax, (uintptr_t)&isActivate);
+                cmp(byte[rax], 0x1);
+                je(ActivateIsTrue);
+                mov(byte[rax], 0x1);
+                pop(rax);
+                jmp(ptr[rip + ourJmp]);
+
+                L(ActivateIsTrue);
+                mov(byte[rax], 0x0);
+                pop(rax);
+                jmp(ptr[rip + ourJmp]);
+
+                L(ourJmp);
+                dq(a_var);
+
+            };
+
+        };
+
+        Patch patch(addr.address(), target.address());
+        patch.ready();
+
+        auto& trampoline = SKSE::GetTrampoline();
+        trampoline.write_branch<6>(target.address(), Loki_Paraglider::CodeAllocation(patch, &trampoline));
+
+    };
+
+    static void InstallParagliderWatcher() {
+
+        REL::Relocation<std::uintptr_t> ActorUpdate{ REL::ID(39375) };  // +69e580
+
+        auto& trampoline = SKSE::GetTrampoline();
+        _Paraglider = trampoline.write_call<5>(ActorUpdate.address() + 0x8AC + 0x08, Paraglider);
+
+    };
+
+    static void AddMGEFApplyEventSink() {
+
+        auto sourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
+        if (sourceHolder) { sourceHolder->AddEventSink(MagicEffectApplyEventHandler::GetSingleton()); }
+
+    }
 
 private:
-    SteamAPICall_t _CreateGroupLobbyImpl(ISteamMatchmaking* a_mm, ELobbyType a_lobbyType) {
-        isNetworkActive = this->GetPlayer().IsLobbyOpen ? true : false;
-        return a_mm->CreateLobby(a_lobbyType, 9);
-    };
-    SteamAPICall_t _LeaveLobbyImpl(ISteamMatchmaking* a_mm, CSteamID a_lobby) {
-        a_mm->LeaveLobby(a_lobby);
-    }
-    ConnectedCharacter _ConstructCharacter(CharacterSlot a_slot) {
-        return [a_slot]() -> ConnectedCharacter {
-            for (auto idx = characters.begin(); idx != characters.end(); ++idx) {
-                idx->charSlot = a_slot;
-                idx->actor = skyrim_cast<RE::Actor*>(RE::PlayerCharacter::GetSingleton());
-                idx->faction = idx->actor->GetCrimeFaction();
-                idx->hp = idx->actor->GetActorValue(RE::ActorValue::kHealth);
-                //characters.push_back(&idx.operator==());
-            };
-        }();
-    }
-    
-    ConnectedCharacter GetCharacterInformation(CharacterSlot a_slot) {
-        return [a_slot]() -> ConnectedCharacter {
-            switch (a_slot) {
-            case CharacterSlot::kCharacter0:
-                for (auto idx : characters) {
-                    if (idx.charSlot == CharacterSlot::kCharacter0) {
-                        return idx;
-                    }
-                }
+    static void Paraglider(RE::Actor* a_this) {
 
-            case CharacterSlot::kCharacter1:
-                for (auto idx : characters) {
-                    if (idx.charSlot == CharacterSlot::kCharacter1) {
-                        return idx;
+        _Paraglider(a_this);
+
+        static Loki_Paraglider* lp = NULL;
+        if (!lp) {
+            lp = new Loki_Paraglider();
+        }
+
+        static RE::EffectSetting* notRevalisGale = NULL;
+        static RE::TESDataHandler* dataHandle = NULL;
+        if (!dataHandle) {  // we only need this to run once
+            dataHandle = RE::TESDataHandler::GetSingleton();
+            if (dataHandle) {
+                notRevalisGale = dataHandle->LookupForm<RE::EffectSetting>(0x10C68, "Paragliding.esp");
+            }
+        };
+
+        if (!isActivate) {
+            isParagliding = FALSE;
+            const RE::BSFixedString endPara = "EndPara";
+            if (a_this->NotifyAnimationGraph(endPara)) {
+                RE::hkVector4 hkv;
+                a_this->GetCharController()->GetPositionImpl(hkv, false);
+                hkv.quad.m128_f32[2] /= 0.0142875;
+                a_this->GetCharController()->fallStartHeight = hkv.quad.m128_f32[2];
+                a_this->GetCharController()->fallTime = 0.00f;
+            }
+            progression = 0.00f;
+            start = 0.00f;
+            return;
+        } else {
+            const RE::BSFixedString startPara = "StartPara";
+            int hasIt;
+            a_this->GetGraphVariableInt("hasparaglider", hasIt);
+            if (hasIt) {
+                if (a_this->NotifyAnimationGraph(startPara)) { isParagliding = TRUE; }
+                if (isParagliding) {
+                    RE::hkVector4 hkv;
+                    a_this->GetCharController()->GetLinearVelocityImpl(hkv);
+                    if (start == 0.0f) {
+                        start = hkv.quad.m128_f32[2];
                     }
+                    float dest = lp->FallSpeed;
+                    if (a_this->HasMagicEffect(notRevalisGale)) {
+                        dest = lp->GaleSpeed;
+                    }
+                    auto a_result = Loki_Paraglider::lerp(start, dest, progression);
+                    if (progression < 1.00f) {
+                        (a_this->HasMagicEffect(notRevalisGale)) ? progression += 0.01f : progression += 0.025f;
+                    }
+                    hkv.quad.m128_f32[2] = a_result;
+                    a_this->GetCharController()->SetLinearVelocityImpl(hkv);
+                }
+                if (a_this->GetCharController()->context.currentState == RE::hkpCharacterStateType::kOnGround) {
+                    isParagliding = FALSE;
+                    isActivate = FALSE;
                 }
             }
+        }
 
-        }();
-    }
-    
-    static std::list<ConnectedCharacter> characters;
+        return;
 
-};
+    };
 
-void func(SkyrimOnlineService_DM* a_dm) {
-    //a_dm->CreateGroupLobby();
-}
-
-struct Player {
-
-public:
-    std::string                         PlayerName = RE::PlayerCharacter::GetSingleton()->GetName();
-    std::uint16_t                       PlayerLevel = RE::PlayerCharacter::GetSingleton()->GetLevel();
-    RE::TESObjectREFR::InventoryItemMap PlayerInventory = RE::PlayerCharacter::GetSingleton()->GetInventory();
-    RE::BGSLocation* PlayerLocation = RE::PlayerCharacter::GetSingleton()->currentLocation;
-    //RE::Actor::GetCurrent3D();
-    bool IsLobbyOpen = false;
+    static inline REL::Relocation<decltype(Paraglider)> _Paraglider;
 
 };
-
-struct ConnectedPlayer {
-
-public:
-    std::string   PlayerInstance = {};
-    std::uint64_t SteamID = {};
-    std::string   Token = {};
-    Player* player;
-
-};
-
-struct Pool {
-
-public:
-    std::string                ID = {};
-    //std::list<ConnectedPlayer> Players = ConnectedPlayer;
-
-};
-
-struct Scope {
-
-public:
-    std::string     App;
-    //std::list<Pool> Pools = Pool;
-
-};
-
-
-static void SKSEMessageHandler(SKSE::MessagingInterface::Message* message) {
-
-    switch (message->type) {
-    case SKSE::MessagingInterface::kNewGame:
-    case SKSE::MessagingInterface::kPostLoadGame: {
-        break;
-    }
-    case SKSE::MessagingInterface::kPostLoad: {
-        break;
-    }
-    default:
-        break;
-    }
-
-}
-
 
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
 {
-    logger::info("Skyrim Online Service loaded");
+    logger::info("Paraglider loaded");
+
     SKSE::Init(a_skse);
-    SKSE::AllocTrampoline(64);
+    SKSE::AllocTrampoline(128);
+
+    Loki_Paraglider::InstallActivateTrue();
+    Loki_Paraglider::InstallParagliderWatcher();
+    Loki_Paraglider::AddMGEFApplyEventSink();
 
     return true;
 }
