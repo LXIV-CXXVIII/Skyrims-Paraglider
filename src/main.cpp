@@ -1,4 +1,4 @@
-﻿#include "C:/dev/ExamplePlugin-CommonLibSSE/build/simpleini-master/SimpleIni.h"
+﻿#include "C:/dev/simpleini-master/SimpleIni.h"
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
 #ifndef NDEBUG
@@ -195,9 +195,23 @@ private:
             }
         };
 
+        const RE::BSFixedString startPara = "StartPara";
+        const RE::BSFixedString endPara = "EndPara";
+
+        if (a_this->IsPlayerTeammate()) {
+            
+            if (a_this->GetCharController()->context.currentState == RE::hkpCharacterStateType::kInAir) {
+                a_this->NotifyAnimationGraph(startPara);
+            } 
+            else {
+                a_this->NotifyAnimationGraph(endPara);
+            }
+
+        }
+
         if (!isActivate) {
             isParagliding = FALSE;
-            const RE::BSFixedString endPara = "EndPara";
+            //const RE::BSFixedString endPara = "EndPara";
             if (a_this->NotifyAnimationGraph(endPara)) {
                 RE::hkVector4 hkv;
                 a_this->GetCharController()->GetPositionImpl(hkv, false);
@@ -209,7 +223,7 @@ private:
             start = 0.00f;
             return;
         } else {
-            const RE::BSFixedString startPara = "StartPara";
+            //const RE::BSFixedString startPara = "StartPara";
             int hasIt;
             a_this->GetGraphVariableInt("hasparaglider", hasIt);
             if (hasIt) {
